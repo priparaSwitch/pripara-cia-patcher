@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#18172d" />
+    <title>프리파라 CIA 패치</title>
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <div class="eyebrow">PRIPARA · LOCAL PATCHER</div>
+        <h1>프리파라 CIA 패치</h1>
+        <p>원본 파일은 이 기기의 브라우저에서만 읽습니다. 파일 검증이 끝나면 패치를 적용할 수 있습니다.</p>
+      </header>
+
+      <section class="panel" aria-label="패치 파일 선택 및 검증">
+        <div class="field">
+          <label for="cia">CIA파일 선택</label>
+          <div class="file-row">
+            <output id="cia-name" class="file-name">선택한 파일 없음</output>
+            <label class="pick" for="cia">파일 찾기</label>
+            <input id="cia" type="file" accept=".cia" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="patch">PATCH파일 선택</label>
+          <div class="file-row">
+            <output id="patch-name" class="file-name">선택한 파일 없음</output>
+            <label class="pick" for="patch">파일 찾기</label>
+            <input id="patch" type="file" accept=".xdelta,.vcdiff,.patch" />
+          </div>
+          <label class="server-option"><input id="use-server" type="checkbox" /> 서버에 있는 파일 사용하기</label>
+        </div>
+
+        <div class="check">
+          <div><span>CIA파일 SHA-256값</span><output id="sha256">—</output></div>
+          <div><span>CIA파일 MD5값</span><output id="md5">—</output></div>
+        </div>
+        <p id="verdict" class="verdict" role="status">CIA 파일을 선택하면 원본을 검사합니다.</p>
+        <button id="apply" disabled>패치하기</button>
+        <div class="progress-wrap">
+          <label for="progress" id="stage">대기 중</label>
+          <progress id="progress" max="100" value="0"></progress>
+          <span id="percent">0%</span>
+        </div>
+        <p id="notice" role="status" aria-live="polite"></p>
+      </section>
+      <footer>패치 처리는 브라우저에서 진행됩니다. CIA 파일은 서버에 전송되지 않습니다.</footer>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
