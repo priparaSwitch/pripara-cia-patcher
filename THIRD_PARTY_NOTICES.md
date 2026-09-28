@@ -1,6 +1,4 @@
 # Third-party notices
 
-- Marc Robledo, RomPatcher.js (BinFile and VCDIFF implementation), MIT license. Source: https://github.com/marcrobledo/RomPatcher.js
+- kotcrab, xdelta-wasm WebAssembly engine and worker adaptation, Apache-2.0 license. Source: https://github.com/kotcrab/xdelta-wasm . License: public/engine/LICENSE. The engine includes Xdelta3 and liblzma.
 - hash-wasm, MIT license. Source: https://github.com/Daninet/hash-wasm
-
-The VCDIFF and BinFile implementation is adapted for ES modules and includes a maximum output-size guard. The upstream copyright and license comments are retained in src/vendor/vcdiff.js.
