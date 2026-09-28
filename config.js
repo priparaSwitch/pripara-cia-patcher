@@ -7,6 +7,6 @@ export const PATCH_CONFIG = Object.freeze({
   expectedMd5: '1B72447D06869ADDEBBF88DF58576E04',                 // 원본 CIA MD5 (32자리 16진수)
   patchPath: './patches/game.xdelta',
   outputName: 'pripara_patched.cia',
-  outputSha256: '37C536544AD270846050034A6C3C38037EFBA604BAE9E574E4218CB9FD3DDAAD',                // 선택 사항: 패치 적용 후 결과 파일 검증
+  outputSha256: 'AAB5F27D222F6B4AA556EB5E21E27F025CCAA430B31F84DA330D75186C90CBB6',                // 선택 사항: 패치 적용 후 결과 파일 검증
   maxOutputBytes: 456370816             // 필수: 결과 CIA보다 넉넉한 최대 크기(바이트)
 });
