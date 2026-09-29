@@ -35,8 +35,8 @@
         </div>
 
         <div class="check">
-          <div><span>CIA파일 SHA-256값</span><output id="sha256">—</output></div>
-          <div><span>CIA파일 MD5값</span><output id="md5">—</output></div>
+          <div><span>CIA Title ID</span><output id="title-id">—</output></div>
+          <div><span>복호화 상태</span><output id="encryption">—</output></div>
         </div>
         <p id="verdict" class="verdict" role="status">CIA 파일을 선택하면 원본을 검사합니다.</p>
         <button id="apply" disabled>패치하기</button>
@@ -48,6 +48,7 @@
         <p id="notice" role="status" aria-live="polite"></p>
       </section>
       <footer>패치 처리는 브라우저에서 진행됩니다. CIA 파일은 서버에 전송되지 않습니다.</footer>
+      <a class="memory-download" href="./patches/memory_patch.zip" download="memory_patch.zip">메모리패치 다운받기</a>
     </main>
     <script type="module" src="/src/main.js"></script>
   </body>

@@ -1,16 +1,15 @@
 import './style.css';
 import { PATCH_CONFIG as config } from '../config.js';
 import { createSHA256 } from 'hash-wasm';
+import { inspectCia } from './cia.js';
 
 const $ = id => document.getElementById(id);
 const ciaInput = $('cia'), patchInput = $('patch'), serverInput = $('use-server');
 const applyButton = $('apply');
-let worker = null, validation = false, busy = false, run = 0;
+let validation = false, busy = false, run = 0;
 const hex = value => typeof value === 'string' && /^[0-9a-f]+$/i.test(value);
-const configured = Number.isSafeInteger(config.expectedSize) && config.expectedSize > 0
-  && hex(config.expectedSha256) && config.expectedSha256.length === 64
-  && hex(config.expectedMd5) && config.expectedMd5.length === 32
-  && Number.isSafeInteger(config.maxOutputBytes) && config.maxOutputBytes >= config.expectedSize;
+const configured = hex(config.expectedTitleId) && config.expectedTitleId.length === 16
+  && Number.isSafeInteger(config.maxOutputBytes) && config.maxOutputBytes > 0;
 
 function progress(stage, percent, indeterminate = false) {
   $('stage').textContent = stage;
@@ -24,18 +23,6 @@ function updateReady() {
   ciaInput.disabled = busy;
   serverInput.disabled = busy;
   patchInput.disabled = busy || serverInput.checked;
-}
-function resetWorker() { if (worker) worker.terminate(); worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' }); }
-function requestWorker(message, transfer = [], onProgress = () => {}) {
-  return new Promise((resolve, reject) => {
-    worker.onmessage = ({ data }) => {
-      if (data.type === 'progress') onProgress(data);
-      else if (data.type === 'result') resolve(data);
-      else if (data.type === 'error') reject(new Error(data.message));
-    };
-    worker.onerror = e => reject(new Error(e.message || '브라우저 작업 중 오류가 발생했습니다.'));
-    worker.postMessage(message, transfer);
-  });
 }
 async function applyXdelta(source, patch) {
   const sha = config.outputSha256 ? await createSHA256() : null;
@@ -68,8 +55,7 @@ async function applyXdelta(source, patch) {
 }
 function invalidate() {
   run++; validation = false;
-  if (worker) { worker.terminate(); worker = null; }
-  $('sha256').textContent = '—'; $('md5').textContent = '—';
+  $('title-id').textContent = '—'; $('encryption').textContent = '—';
   $('notice').textContent = ''; updateReady();
 }
 async function validate() {
@@ -77,22 +63,22 @@ async function validate() {
   const ticket = run, file = ciaInput.files[0];
   $('cia-name').textContent = file?.name || '선택한 파일 없음';
   if (!file) { $('verdict').textContent = 'CIA 파일을 선택하면 원본을 검사합니다.'; progress('대기 중', 0); return; }
-  resetWorker();
-  progress('CIA 파일 해시 계산 중', 0);
+  progress('CIA 구조 확인 중', 0, true);
   $('verdict').textContent = '원본 CIA를 확인하고 있습니다.';
   try {
-    const result = await requestWorker({ type: 'hash', file }, [], ({ percent }) => progress('CIA 파일 해시 계산 중', percent));
+    const result = await inspectCia(file);
     if (ticket !== run) return;
-    $('sha256').textContent = result.sha256;
-    $('md5').textContent = result.md5;
-    validation = configured && file.size === config.expectedSize
-      && result.sha256 === config.expectedSha256.toLowerCase()
-      && result.md5 === config.expectedMd5.toLowerCase();
+    $('title-id').textContent = result.titleId;
+    $('encryption').textContent = result.encryptedCount
+      ? `CIA 콘텐츠 암호화됨 (${result.encryptedCount}/${result.contentCount})`
+      : result.noCrypto ? 'CIA 콘텐츠·메인 NCCH 복호화됨' : '메인 NCCH 암호화됨';
+    validation = configured && result.titleId === config.expectedTitleId.toUpperCase()
+      && result.encryptedCount === 0 && result.noCrypto;
     $('verdict').textContent = !configured
       ? '원본 검증 기준이 설정되지 않았습니다. 관리자에게 문의하세요.'
       : validation
         ? `이 파일은 [${config.title}] 패치가 가능합니다.`
-        : `이 파일은 [${config.title}] 패치가 불가능합니다. 파일 크기 또는 해시가 일치하지 않습니다.`;
+        : `이 파일은 [${config.title}] 패치가 불가능합니다. Title ID 또는 복호화 상태를 확인하세요.`;
     $('verdict').dataset.valid = String(validation);
     progress(validation ? '검증 완료' : '검증 실패', validation ? 100 : 0);
   } catch (e) { if (ticket === run) $('verdict').textContent = `검증 실패: ${e.message}`; }
