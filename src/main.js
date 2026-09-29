@@ -12,8 +12,10 @@ let sequence = 0;
 const validHash = h => typeof h === 'string' && /^[a-f0-9]{64}$/i.test(h);
 const configured = /^[a-f0-9]{16}$/i.test(config.expectedTitleId) &&
   config.romfsPatchIncluded === true &&
-  ['sourceRomfsSha256', 'sourceExefsSha256', 'targetRomfsSha256',
-    'targetExefsSha256', 'romfsPatchSha256', 'exefsPatchSha256'].every(k => validHash(config[k]));
+  ['sourceRomfsSha256', 'targetRomfsSha256', 'romfsPatchSha256'].every(k => validHash(config[k])) &&
+  Array.isArray(config.exefsVariants) && config.exefsVariants.length > 0 &&
+  config.exefsVariants.every(v => ['sourceSha256', 'targetSha256', 'patchSha256'].every(k => validHash(v[k])) &&
+    typeof v.patchPath === 'string');
 
 function progress(stage, percent, indeterminate = false) {
   $('stage').textContent = stage;
@@ -122,14 +124,16 @@ applyButton.addEventListener('click', async () => {
     const sourceExefs = file.slice(exefsOffset, exefsOffset + exefsSize);
     const sourceRomfs = file.slice(romfsOffset, romfsOffset + romfsSize);
     progress('내부 파일 해시 검사 중', 0, true);
-    if (await shaBlob(sourceExefs) !== config.sourceExefsSha256 ||
-        await shaBlob(sourceRomfs) !== config.sourceRomfsSha256)
-      throw new Error('내부 RomFS·ExeFS가 지원하는 원본과 다릅니다.');
+    const exefsHash = await shaBlob(sourceExefs);
+    const variant = config.exefsVariants.find(v => v.sourceSha256 === exefsHash);
+    if (await shaBlob(sourceRomfs) !== config.sourceRomfsSha256)
+      throw new Error('내부 RomFS가 지원하는 원본과 다릅니다.');
+    if (!variant) throw new Error(`지원하지 않는 ExeFS입니다 (SHA-256: ${exefsHash}).`);
 
     progress('패치 파일 검증 중', 0, true);
     const [romfsPatch, exefsPatch] = await Promise.all([
       fetchPatch(config.romfsPatchPath, config.romfsPatchSha256),
-      fetchPatch(config.exefsPatchPath, config.exefsPatchSha256),
+      fetchPatch(variant.patchPath, variant.patchSha256),
     ]);
     if (!navigator.storage?.getDirectory) throw new Error('브라우저의 임시 파일 저장 기능이 필요합니다.');
     const root = await navigator.storage.getDirectory();
@@ -140,7 +144,7 @@ applyButton.addEventListener('click', async () => {
     const romfsHandle = await root.getFileHandle(romfsName, { create: true });
     temporaryNames.push(romfsName);
     const exefs = await runXdelta(sourceExefs, exefsPatch, exefsHandle, 3000000, 'ExeFS', 0, 5);
-    if (await shaBlob(exefs) !== config.targetExefsSha256) throw new Error('ExeFS 결과 해시 불일치');
+    if (await shaBlob(exefs) !== variant.targetSha256) throw new Error('ExeFS 결과 해시 불일치');
     const romfs = await runXdelta(sourceRomfs, romfsPatch, romfsHandle, 450000000, 'RomFS', 5, 70);
     if (await shaBlob(romfs) !== config.targetRomfsSha256) throw new Error('RomFS 결과 해시 불일치');
     progress('NCCH·CIA 메타데이터 구성 중', 80, true);

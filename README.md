@@ -39,3 +39,11 @@ Get-FileHash (Join-Path $work.FullName 'romfs_verify.bin') -Algorithm SHA256
 - 입력 RomFS·ExeFS 전체 SHA-256과 델타 파일 SHA-256, 결과 두 영역의 SHA-256을 확인합니다. 다른 버전은 거부합니다.
 - 개발 중에는 작은 합성 CIA를 사용해 파서·NCCH/TMD 필드를 검증했습니다. 사용자가 `pripara-godmode.cia`와 `piratelegit-decrypted.cia`로 모두 패치가 동작한다고 보고했습니다. 다른 배포본의 호환성까지 확인한 결과는 아닙니다.
 - 생성한 CIA의 전체 SHA-256은 godmode 기반 배포용 CIA의 SHA-256과 다를 수 있습니다. 검증 기준은 내부 패치 결과와 컨테이너 구조입니다.
+
+## 아이콘이 다른 세 번째 CIA
+
+`PriPara Mezase Idol Grand Prix No.1.decrypted.cia`는 원본 RomFS SHA-256이 지원 목록과 같지만, ExeFS의 `icon`에서 4바이트, 해당 ExeFS 헤더의 해시에서 32바이트가 다릅니다. 기존 ExeFS 전체 델타를 이 파일에 적용하면 안 됩니다. 패처는 ExeFS SHA-256으로 델타를 선택하고, 아이콘을 보존한 세 번째 입력용 `exefs_variant.xdelta`를 포함합니다. 사용자가 만든 델타의 SHA-256과 복원된 결과 ExeFS의 SHA-256을 별도로 확인했습니다. **이 세 번째 CIA의 브라우저 패치 결과 및 설치·실행은 아직 테스트가 필요합니다.**
+
+로컬에서 `tools/make_exefs_variant.py`를 `F:\nintendo3ds\roms`로 복사해 같은 폴더의 `xdelta3.exe`와 함께 실행할 수 있습니다. 이전 `cia_compare_*` 폴더의 `pripara-godmode/exefs.bin`, `patched/exefs.bin`, 새 `new_cia_regions/exefs.bin`이 필요합니다. 스크립트는 세 ExeFS의 SHA-256을 고정 검사하고, 차이가 아이콘 본문 4바이트와 헤더 해시 32바이트뿐인지 다시 검사합니다. 원래 아이콘을 새 아이콘으로 바꾼 패치 결과 ExeFS를 로컬에서 만든 뒤, 새 입력용 Xdelta를 생성하고 복원 검증합니다. `new_cia_regions/exefs_variant.xdelta`와 출력된 SHA-256만 전달하면 됩니다. CIA나 ExeFS 원본은 전달하지 않습니다.
+
+현재 `config.js`에는 두 ExeFS 입력 해시와 각기 다른 델타·목표 해시가 들어 있습니다. 처음 확인한 두 CIA는 사용자가 패치 동작을 보고했습니다. 세 번째 CIA는 별도 종단 간 검증이 필요합니다.
