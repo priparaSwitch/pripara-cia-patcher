@@ -78,20 +78,18 @@ export async function inspectCia(file) {
   }
   if (totalSize !== contentSize || !main || main.size < 0x200)
     throw new Error('CIA의 메인 콘텐츠 또는 전체 크기가 올바르지 않습니다.');
-  // An encrypted content cannot have a readable NCCH magic at this offset.
-  // Report the TMD flag before treating its ciphertext as a malformed NCCH.
-  if (encryptedCount) {
-    const error = new Error('이 CIA는 암호화되어 있어 지원하지 않습니다. 복호화된 CIA 파일을 사용해 주세요.');
-    error.code = 'ENCRYPTED_CIA';
-    error.titleId = titleId;
-    throw error;
+  requireRange(position, metaSize, file.size, 'CIA 메타데이터');
+  // Encrypted CIAs still have readable outer metadata for the information panel.
+  // Do not attempt to interpret their encrypted content as an NCCH header.
+  let ncch = null;
+  if (!encryptedCount) {
+    ncch = await read(file, main.position, 0x200, '메인 NCCH');
+    const magic = String.fromCharCode(...ncch.subarray(0x100, 0x104));
+    if (magic !== 'NCCH')
+      throw new Error('메인 콘텐츠의 NCCH 헤더를 찾을 수 없습니다. 파일이 손상되었거나 복호화가 완료되지 않았을 수 있습니다. 복호화된 CIA 파일을 확인해 주세요.');
   }
-  const ncch = await read(file, main.position, 0x200, '메인 NCCH');
-  const magic = String.fromCharCode(...ncch.subarray(0x100, 0x104));
-  if (magic !== 'NCCH')
-    throw new Error('메인 콘텐츠의 NCCH 헤더를 찾을 수 없습니다. 파일이 손상되었거나 복호화가 완료되지 않았을 수 있습니다. 복호화된 CIA 파일을 확인해 주세요.');
   return {
-    titleId, encryptedCount, contentCount: count, noCrypto: Boolean(ncch[0x18F] & 4),
+    titleId, encryptedCount, contentCount: count, noCrypto: Boolean(ncch && (ncch[0x18F] & 4)),
     headerSize, certSize, ticketSize, tmdSize, metaSize, contentSize,
     ticketOffset, tmdOffset, contentOffset, tmd, sig, contents, main, ncch,
   };

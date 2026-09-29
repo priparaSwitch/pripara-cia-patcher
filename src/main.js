@@ -1,6 +1,7 @@
 import './style.css';
 import { PATCH_CONFIG as config } from '../config.js';
 import { inspectCia } from './cia.js';
+import { readCiaMeta } from './meta.js';
 import { shaBlob, buildMainNcch, buildCia, pickOutput, saveBlob } from './rebuild.js';
 
 const $ = id => document.getElementById(id);
@@ -18,6 +19,62 @@ const configured = /^[a-f0-9]{16}$/i.test(config.expectedTitleId) &&
   config.exefsVariants.every(v => ['sourceSha256', 'targetSha256', 'patchSha256'].every(k => validHash(v[k])) &&
     typeof v.patchPath === 'string');
 
+function showMeta(meta) {
+  const status = $('meta-status');
+  const fields = $('meta-fields');
+  fields.replaceChildren();
+  fields.hidden = true;
+  if (!meta) {
+    status.textContent = '설치용 메타데이터가 없는 파일입니다';
+    return;
+  }
+  status.textContent = meta.complete && meta.titles
+    ? '설치용 메타데이터가 있습니다.'
+    : '메타데이터가 있지만 아이콘 정보가 없거나 형식이 불완전합니다.';
+  const list = document.createElement('dl');
+  const row = (name, value) => {
+    const dt = document.createElement('dt');
+    const dd = document.createElement('dd');
+    dt.textContent = name;
+    dd.textContent = value;
+    list.append(dt, dd);
+  };
+  row('크기', `${meta.size.toLocaleString()}바이트`);
+  if (meta.coreVersion !== undefined) {
+    row('코어 버전', `0x${meta.coreVersion.toString(16).toUpperCase().padStart(8, '0')}`);
+    row('의존성', `${meta.dependencies.length}개`);
+  }
+  if (meta.titles) {
+    const title = meta.titles.find(t => t.language === '일본어') || meta.titles[0];
+    row('제목', title?.short || title?.long || '표시 없음');
+    row('긴 제목', title?.long || '표시 없음');
+    row('제작사 표기', title?.publisher || '표시 없음');
+    row('지역', `${meta.regions.join(', ') || '지정 없음'} (0x${meta.regionMask.toString(16).toUpperCase().padStart(8, '0')})`);
+    row('SMDH 버전', String(meta.smdhVersion));
+    row('SMDH 플래그', `0x${meta.flags.toString(16).toUpperCase().padStart(8, '0')}`);
+  }
+  fields.append(list);
+  if (meta.dependencies?.length || meta.titles?.length > 1) {
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = '언어별 제목과 의존성 목록';
+    const ul = document.createElement('ul');
+    for (const title of meta.titles || []) {
+      const li = document.createElement('li');
+      li.textContent = `${title.language}: ${title.short || title.long || '제목 없음'}${title.publisher ? ` / ${title.publisher}` : ''}`;
+      ul.append(li);
+    }
+    for (const id of meta.dependencies || []) {
+      const li = document.createElement('li');
+      li.textContent = `의존 Title ID: ${id}`;
+      ul.append(li);
+    }
+    details.append(summary, ul);
+    fields.append(details);
+  }
+  fields.hidden = false;
+}
+
 function progress(stage, percent, indeterminate = false) {
   $('stage').textContent = stage;
   if (indeterminate) $('progress').removeAttribute('value');
@@ -34,6 +91,9 @@ async function validate() {
   ready();
   $('title-id').textContent = '—';
   $('encryption').textContent = '—';
+  $('meta-status').textContent = 'CIA 파일을 선택하면 확인합니다.';
+  $('meta-fields').replaceChildren();
+  $('meta-fields').hidden = true;
   $('verdict').dataset.valid = 'false';
   const file = ciaInput.files[0];
   $('cia-name').textContent = file?.name || '선택한 파일 없음';
@@ -42,6 +102,14 @@ async function validate() {
   try {
     const cia = await inspectCia(file);
     if (current !== sequence) return;
+    try {
+      const meta = await readCiaMeta(file, cia);
+      if (current !== sequence) return;
+      showMeta(meta);
+    } catch {
+      if (current !== sequence) return;
+      $('meta-status').textContent = '설치용 메타데이터를 읽지 못했습니다.';
+    }
     $('title-id').textContent = cia.titleId;
     $('encryption').textContent = cia.encryptedCount === 0 && cia.noCrypto
       ? 'CIA 콘텐츠·메인 NCCH 복호화됨' : '암호화된 콘텐츠가 있습니다';
