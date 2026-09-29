@@ -1,7 +1,8 @@
 :root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Noto Sans KR",sans-serif;color:#f4f3fb;background:#18172d;font-synthesis:none}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 80% 0%,#383067 0,transparent 43%),#18172d}
 .shell{width:min(760px,calc(100% - 32px));margin:0 auto;padding:64px 0 32px}
-header{margin-bottom:30px}.eyebrow{font-size:14px;font-weight:750;letter-spacing:.16em;color:#b9aaff}
+header{margin-bottom:30px}.header-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.eyebrow{font-size:14px;font-weight:750;letter-spacing:.16em;color:#b9aaff}
+.version-badge{display:inline-flex;gap:5px;align-items:center;flex-shrink:0;border:1px solid #7668a4;border-radius:999px;padding:6px 11px;background:#312b51;color:#f4eaff;font:700 13px ui-monospace,SFMono-Regular,Consolas,monospace}
 h1{font-size:clamp(29px,5vw,44px);letter-spacing:-.04em;margin:12px 0 10px}header p{color:#c9c6dc;font-size:16px;line-height:1.65;margin:0}
 .panel{background:#24223e;border:1px solid #4b476b;border-radius:22px;padding:30px;box-shadow:0 20px 60px #08081744}
 .field{margin-bottom:24px}.field>label:first-child{display:block;font-weight:750;margin-bottom:10px;font-size:16px}

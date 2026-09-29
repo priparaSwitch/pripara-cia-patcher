@@ -1,5 +1,6 @@
 // GitHub Pages의 프로젝트 하위 경로에서도 동작하도록 ./ 상대 경로를 사용합니다.
 export const PATCH_CONFIG = Object.freeze({
+  siteVersion: '2026.09.29.1',
   title: '프리파라 노려라! 아이돌 그랑프리 No.1',
   expectedTitleId: '0004000000178300',
   romfsPatchPath: './patches/romfs.xdelta',

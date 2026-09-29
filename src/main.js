@@ -4,6 +4,7 @@ import { inspectCia } from './cia.js';
 import { shaBlob, buildMainNcch, buildCia, pickOutput, saveBlob } from './rebuild.js';
 
 const $ = id => document.getElementById(id);
+$('site-version').textContent = config.siteVersion;
 const ciaInput = $('cia');
 const applyButton = $('apply');
 let validation = null;
