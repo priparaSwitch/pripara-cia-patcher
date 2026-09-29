@@ -21,6 +21,4 @@ button#apply:hover:not(:disabled){background:#d1b5ff}button#apply:disabled{opaci
 progress{grid-column:1/-1;width:100%;height:14px;accent-color:#b795ff;border-radius:7px}
 #notice{min-height:24px;margin:17px 0 0;font-weight:700;line-height:1.5}
 footer{font-size:14px;color:#a8a4bf;margin-top:20px;line-height:1.5}
-.memory-download{display:block;margin-top:22px;padding:15px 18px;border:1px solid #8b79bf;border-radius:12px;background:#38315d;color:#f4eaff;text-align:center;text-decoration:none;font-size:16px;font-weight:750}
-.memory-download:hover{background:#4b407a}.memory-download:focus-visible{outline:2px solid #e9dbff;outline-offset:3px}
 @media(max-width:550px){.shell{padding-top:35px}.panel{padding:19px}.check>div{grid-template-columns:1fr;gap:3px}.pick{min-width:86px;padding-inline:9px}}

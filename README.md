@@ -37,5 +37,5 @@ Get-FileHash (Join-Path $work.FullName 'romfs_verify.bin') -Algorithm SHA256
 - `npm ci`, `npm run build`로 정적 파일을 만듭니다. `dist/`를 시험 서버에서 제공합니다.
 - 최신 PC Chrome/Edge와 충분한 임시 디스크 공간이 필요합니다. 저장 대화상자는 패치 버튼을 누를 때 바로 표시됩니다.
 - 입력 RomFS·ExeFS 전체 SHA-256과 델타 파일 SHA-256, 결과 두 영역의 SHA-256을 확인합니다. 다른 버전은 거부합니다.
-- 이 코드는 작은 합성 CIA를 사용한 파서·NCCH/TMD 필드 검증과 Vite 빌드만 통과했습니다. **두 실제 CIA의 생성 결과, Azahar, 실기기 설치·실행은 아직 검증되지 않았습니다.** 서명 처리 및 입력별 메타데이터 호환성도 실제 시험 결과로 판단해야 합니다.
+- 개발 중에는 작은 합성 CIA를 사용해 파서·NCCH/TMD 필드를 검증했습니다. 사용자가 `pripara-godmode.cia`와 `piratelegit-decrypted.cia`로 모두 패치가 동작한다고 보고했습니다. 다른 배포본의 호환성까지 확인한 결과는 아닙니다.
 - 생성한 CIA의 전체 SHA-256은 godmode 기반 배포용 CIA의 SHA-256과 다를 수 있습니다. 검증 기준은 내부 패치 결과와 컨테이너 구조입니다.

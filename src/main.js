@@ -29,6 +29,9 @@ async function validate() {
   const current = ++sequence;
   validation = null;
   ready();
+  $('title-id').textContent = '—';
+  $('encryption').textContent = '—';
+  $('verdict').dataset.valid = 'false';
   const file = ciaInput.files[0];
   $('cia-name').textContent = file?.name || '선택한 파일 없음';
   if (!file) return;
@@ -42,13 +45,21 @@ async function validate() {
     const supported = cia.titleId === config.expectedTitleId.toUpperCase() &&
       cia.encryptedCount === 0 && cia.noCrypto;
     validation = supported ? cia : null;
-    $('verdict').textContent = !supported ? 'Title ID 또는 복호화 상태가 지원 범위와 다릅니다.'
+    $('verdict').textContent = cia.encryptedCount || !cia.noCrypto
+      ? '이 CIA는 암호화되어 있어 지원하지 않습니다. 복호화된 CIA 파일을 사용해 주세요.'
+      : !supported ? '이 게임의 CIA 파일이 아닙니다.'
       : !configured ? '배포용 패치 설정이 아직 완성되지 않았습니다.'
         : '기본 구조 확인 완료. 패치할 내부 영역은 실행 시 해시로 검사합니다.';
     $('verdict').dataset.valid = String(supported && configured);
     progress('기본 구조 확인 완료', 100);
   } catch (error) {
-    if (current === sequence) $('verdict').textContent = `CIA 검사 실패: ${error.message}`;
+    if (current === sequence) {
+      if (error.code === 'ENCRYPTED_CIA') {
+        $('title-id').textContent = error.titleId;
+        $('encryption').textContent = '암호화됨';
+      }
+      $('verdict').textContent = `CIA 검사 실패: ${error.message}`;
+    }
   }
   ready();
 }
