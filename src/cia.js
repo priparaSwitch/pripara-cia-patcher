@@ -57,6 +57,7 @@ export async function inspectCia(file) {
 
   let position = contentOffset;
   let main = null;
+  const contents = [];
   let encryptedCount = 0;
   let totalSize = 0;
   for (let i = 0; i < count; i++) {
@@ -67,6 +68,7 @@ export async function inspectCia(file) {
     if (!Number.isSafeInteger(size) || size === 0 || position + size > contentOffset + contentSize)
       throw new Error('TMD의 콘텐츠 크기가 CIA와 일치하지 않습니다.');
     if (flags & 1) encryptedCount++;
+    contents.push({ index, flags, position, size, recordOffset: at });
     if (index === 0) {
       if (main) throw new Error('메인 콘텐츠가 중복되어 있습니다.');
       main = { position, size };
@@ -79,5 +81,9 @@ export async function inspectCia(file) {
   const ncch = await read(file, main.position, 0x200, '메인 NCCH');
   const magic = String.fromCharCode(...ncch.subarray(0x100, 0x104));
   if (magic !== 'NCCH') throw new Error('메인 콘텐츠의 NCCH 헤더를 찾을 수 없습니다.');
-  return { titleId, encryptedCount, contentCount: count, noCrypto: Boolean(ncch[0x18F] & 4) };
+  return {
+    titleId, encryptedCount, contentCount: count, noCrypto: Boolean(ncch[0x18F] & 4),
+    headerSize, certSize, ticketSize, tmdSize, metaSize, contentSize,
+    ticketOffset, tmdOffset, contentOffset, tmd, sig, contents, main, ncch,
+  };
 }

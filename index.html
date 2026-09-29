@@ -11,10 +11,10 @@
       <header>
         <div class="eyebrow">PRIPARA · LOCAL PATCHER</div>
         <h1>프리파라 CIA 패치</h1>
-        <p>원본 파일은 이 기기의 브라우저에서만 읽습니다. 파일 검증이 끝나면 패치를 적용할 수 있습니다.</p>
+        <p>원본 CIA를 선택하면 브라우저에서 내부 파일을 확인하고 패치합니다. CIA는 서버로 전송되지 않습니다.</p>
       </header>
 
-      <section class="panel" aria-label="패치 파일 선택 및 검증">
+      <section class="panel" aria-label="CIA 파일 선택 및 검증">
         <div class="field">
           <label for="cia">CIA파일 선택</label>
           <div class="file-row">
@@ -22,16 +22,6 @@
             <label class="pick" for="cia">파일 찾기</label>
             <input id="cia" type="file" accept=".cia" />
           </div>
-        </div>
-
-        <div class="field">
-          <label for="patch">PATCH파일 선택</label>
-          <div class="file-row">
-            <output id="patch-name" class="file-name">선택한 파일 없음</output>
-            <label class="pick" for="patch">파일 찾기</label>
-            <input id="patch" type="file" accept=".xdelta,.vcdiff,.patch" />
-          </div>
-          <label class="server-option"><input id="use-server" type="checkbox" /> 서버에 있는 파일 사용하기</label>
         </div>
 
         <div class="check">
