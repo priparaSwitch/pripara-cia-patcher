@@ -3,6 +3,7 @@ import { PATCH_CONFIG as config } from '../config.js';
 import { inspectCia } from './cia.js';
 import { readCiaMeta } from './meta.js';
 import { shaBlob, buildMainNcch, buildCia, pickOutput, saveBlob } from './rebuild.js';
+import { normalizeExeFs, restoreExeFsIcon } from './exefs.js';
 
 const $ = id => document.getElementById(id);
 $('site-version').textContent = config.siteVersion;
@@ -14,14 +15,17 @@ changelogDialog.addEventListener('click', event => {
 });
 const ciaInput = $('cia');
 const applyButton = $('apply');
+const legacyButton = $('apply-legacy');
+const canonicalVariant = config.exefsVariants.find(v => v.sourceSha256 === config.canonicalExefsSha256);
 let validation = null;
 let busy = false;
 let sequence = 0;
 const validHash = h => typeof h === 'string' && /^[a-f0-9]{64}$/i.test(h);
 const configured = /^[a-f0-9]{16}$/i.test(config.expectedTitleId) &&
+  validHash(config.canonicalExefsSha256) && validHash(config.canonicalIconSha256) &&
   config.romfsPatchIncluded === true &&
   ['sourceRomfsSha256', 'targetRomfsSha256', 'romfsPatchSha256'].every(k => validHash(config[k])) &&
-  Array.isArray(config.exefsVariants) && config.exefsVariants.length > 0 &&
+  Array.isArray(config.exefsVariants) && config.exefsVariants.length > 0 && canonicalVariant &&
   config.exefsVariants.every(v => ['sourceSha256', 'targetSha256', 'patchSha256'].every(k => validHash(v[k])) &&
     typeof v.patchPath === 'string');
 
@@ -89,6 +93,7 @@ function progress(stage, percent, indeterminate = false) {
 }
 function ready() {
   applyButton.disabled = busy || !validation || !configured;
+  legacyButton.disabled = busy || !validation || !configured;
   ciaInput.disabled = busy;
 }
 async function validate() {
@@ -172,7 +177,7 @@ async function runXdelta(source, patch, outputHandle, maxOutputBytes, label, bas
 }
 
 ciaInput.addEventListener('change', validate);
-applyButton.addEventListener('click', async () => {
+async function applyPatch(legacy = false) {
   if (busy || !validation || !configured) return;
   // The picker must be opened in the click's user activation, before any fetch/hasher await.
   let destination;
@@ -205,10 +210,22 @@ applyButton.addEventListener('click', async () => {
       throw new Error('내부 RomFS가 지원하는 원본과 다릅니다.');
     if (!variant) throw new Error(`지원하지 않는 ExeFS입니다 (SHA-256: ${exefsHash}).`);
 
+    let patchSource = sourceExefs;
+    let originalIcon = null;
+    if (!legacy && variant.normalizeIcon) {
+      progress('ExeFS 아이콘 차이 확인 중', 0, true);
+      const prepared = await normalizeExeFs(sourceExefs, config.canonicalExefsSha256,
+        config.canonicalIconSha256);
+      patchSource = prepared.normalized;
+      originalIcon = prepared.originalIcon;
+    }
+
+    const chosenPatch = !legacy && variant.normalizeIcon ? canonicalVariant : variant;
+
     progress('패치 파일 검증 중', 0, true);
     const [romfsPatch, exefsPatch] = await Promise.all([
       fetchPatch(config.romfsPatchPath, config.romfsPatchSha256),
-      fetchPatch(variant.patchPath, variant.patchSha256),
+      fetchPatch(chosenPatch.patchPath, chosenPatch.patchSha256),
     ]);
     if (!navigator.storage?.getDirectory) throw new Error('브라우저의 임시 파일 저장 기능이 필요합니다.');
     const root = await navigator.storage.getDirectory();
@@ -218,7 +235,8 @@ applyButton.addEventListener('click', async () => {
     temporaryNames.push(exefsName);
     const romfsHandle = await root.getFileHandle(romfsName, { create: true });
     temporaryNames.push(romfsName);
-    const exefs = await runXdelta(sourceExefs, exefsPatch, exefsHandle, 3000000, 'ExeFS', 0, 5);
+    let exefs = await runXdelta(patchSource, exefsPatch, exefsHandle, 3000000, 'ExeFS', 0, 5);
+    if (originalIcon) exefs = await restoreExeFsIcon(exefs, originalIcon, config.canonicalIconSha256);
     if (await shaBlob(exefs) !== variant.targetSha256) throw new Error('ExeFS 결과 해시 불일치');
     const romfs = await runXdelta(sourceRomfs, romfsPatch, romfsHandle, 450000000, 'RomFS', 5, 70);
     if (await shaBlob(romfs) !== config.targetRomfsSha256) throw new Error('RomFS 결과 해시 불일치');
@@ -243,5 +261,7 @@ applyButton.addEventListener('click', async () => {
     busy = false;
     ready();
   }
-});
+}
+applyButton.addEventListener('click', () => applyPatch(false));
+legacyButton.addEventListener('click', () => applyPatch(true));
 if (!configured) $('verdict').textContent = '배포용 RomFS 패치 파일이 아직 포함되지 않았습니다.';
