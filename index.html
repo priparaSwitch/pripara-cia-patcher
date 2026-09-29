@@ -11,7 +11,10 @@
       <header>
         <div class="header-top">
           <div class="eyebrow">PRIPARA · LOCAL PATCHER</div>
-          <span class="version-badge" aria-label="사이트 버전">버전 <output id="site-version">확인 중</output></span>
+          <div class="header-actions">
+            <button id="show-changelog" class="changelog-trigger" type="button" aria-haspopup="dialog" aria-controls="changelog-dialog">패치 로그</button>
+            <span class="version-badge" aria-label="사이트 버전">버전 <output id="site-version">확인 중</output></span>
+          </div>
         </div>
         <h1>프리파라 CIA 패치</h1>
         <p>원본 CIA를 선택하면 브라우저에서 내부 파일을 확인하고 패치합니다. CIA는 서버로 전송되지 않습니다.</p>
@@ -47,6 +50,30 @@
       </section>
       <footer>패치 처리는 브라우저에서 진행됩니다. CIA 파일은 서버에 전송되지 않습니다.</footer>
     </main>
+    <dialog id="changelog-dialog" aria-labelledby="changelog-title">
+      <div class="changelog-heading">
+        <h2 id="changelog-title">한글패치 수정 내역</h2>
+        <button id="close-changelog" class="changelog-close" type="button" aria-label="패치 로그 닫기">×</button>
+      </div>
+      <div class="changelog-content">
+        <section aria-labelledby="changelog-v02">
+          <h3 id="changelog-v02">v0.2</h3>
+          <ul>
+            <li>일부 구간 한글 미출력 수정</li>
+            <li>메모리패치를 사용하지 않아도 동작하도록 호환성 패치</li>
+            <li>[미완성] 튜토리얼 번역</li>
+			<li>[미완성] 선택지 핑크테두리</li>
+          </ul>
+        </section>
+        <hr class="changelog-divider" />
+        <section aria-labelledby="changelog-v01">
+          <h3 id="changelog-v01">v0.1</h3>
+          <ul>
+            <li>한글패치 테스트버전 제작</li>
+          </ul>
+        </section>
+      </div>
+    </dialog>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

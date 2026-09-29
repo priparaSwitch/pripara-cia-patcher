@@ -6,6 +6,12 @@ import { shaBlob, buildMainNcch, buildCia, pickOutput, saveBlob } from './rebuil
 
 const $ = id => document.getElementById(id);
 $('site-version').textContent = config.siteVersion;
+const changelogDialog = $('changelog-dialog');
+$('show-changelog').addEventListener('click', () => changelogDialog.showModal());
+$('close-changelog').addEventListener('click', () => changelogDialog.close());
+changelogDialog.addEventListener('click', event => {
+  if (event.target === changelogDialog) changelogDialog.close();
+});
 const ciaInput = $('cia');
 const applyButton = $('apply');
 let validation = null;
