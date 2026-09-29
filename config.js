@@ -1,6 +1,6 @@
 // GitHub Pages의 프로젝트 하위 경로에서도 동작하도록 ./ 상대 경로를 사용합니다.
 export const PATCH_CONFIG = Object.freeze({
-  siteVersion: '2026.09.29.4',
+  siteVersion: '2026.09.29.5',
   canonicalExefsSha256: 'c68a4ef55a90565c80ef4701952cd99b341b8df00c200b0a7dbad8727575ef48',
   canonicalIconSha256: '54e6da6e71bee05ddcdd05ea42bee25b1c4fe982fef13bd09a8d31d9013e2e5b',
   title: '프리파라 노려라! 아이돌 그랑프리 No.1',
