@@ -7,12 +7,12 @@ export const PATCH_CONFIG = Object.freeze({
   expectedTitleId: '0004000000178300',
   romfsPatchPath: './patches/romfs.xdelta',
   sourceRomfsSha256: '775f000c709a7d0455d31d84a919e9d4a5effad0e15f5aabeabd9cbcd626a5e6',
-  targetRomfsSha256: 'c01138d8f153821252a18efc90e9a1030b5a747850dd3ddc601ec9449b2955af',
+  targetRomfsSha256: '1a7824b9bdf84a3b1a54cd4e800afab4cf5d1ac2d7672166f848907587793e75',
   romfsPatchSha256: '46d5d0d5a7694f4a8d6481300c292d718f9b179e0379d17e00a8625dafd8647e',
   romfsPatchIncluded: true,
   exefsVariants: [{
     sourceSha256: 'c68a4ef55a90565c80ef4701952cd99b341b8df00c200b0a7dbad8727575ef48',
-    targetSha256: '95e65ba0cdb0babd8183a916368d27f5808144c4251ebddb757959b065663561',
+    targetSha256: 'd22095113e008f17f103fe880d569a00d608cde29f5c1aaac39105c9f48d7175',
     patchPath: './patches/exefs.bin.xdelta',
     patchSha256: '8f55112933c0d06a1d96cb9ef61331bdddd366bfae4986f512f7107590f39886',
   }, {
