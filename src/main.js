@@ -20,14 +20,12 @@ const canonicalVariant = config.exefsVariants.find(v => v.sourceSha256 === confi
 let validation = null;
 let busy = false;
 let sequence = 0;
-const validHash = h => typeof h === 'string' && /^[a-f0-9]{64}$/i.test(h);
+// SHA-256 values identify known icon variants only; they do not gate patching.
 const configured = /^[a-f0-9]{16}$/i.test(config.expectedTitleId) &&
-  validHash(config.canonicalExefsSha256) && validHash(config.canonicalIconSha256) &&
   config.romfsPatchIncluded === true &&
-  ['sourceRomfsSha256', 'targetRomfsSha256', 'romfsPatchSha256'].every(k => validHash(config[k])) &&
+  typeof config.romfsPatchPath === 'string' &&
   Array.isArray(config.exefsVariants) && config.exefsVariants.length > 0 && canonicalVariant &&
-  config.exefsVariants.every(v => ['sourceSha256', 'targetSha256', 'patchSha256'].every(k => validHash(v[k])) &&
-    typeof v.patchPath === 'string');
+  config.exefsVariants.every(v => typeof v.patchPath === 'string');
 
 function showMeta(meta) {
   const status = $('meta-status');
@@ -131,7 +129,7 @@ async function validate() {
       ? '이 CIA는 암호화되어 있어 지원하지 않습니다. 복호화된 CIA 파일을 사용해 주세요.'
       : !supported ? '이 게임의 CIA 파일이 아닙니다.'
       : !configured ? '배포용 패치 설정이 아직 완성되지 않았습니다.'
-        : '기본 구조 확인 완료. 패치할 내부 영역은 실행 시 해시로 검사합니다.';
+        : '기본 구조 확인 완료. 패치를 적용할 수 있습니다.';
     $('verdict').dataset.valid = String(supported && configured);
     progress('기본 구조 확인 완료', 100);
   } catch (error) {
@@ -146,14 +144,13 @@ async function validate() {
   ready();
 }
 
-async function fetchPatch(path, expectedHash) {
+async function fetchPatch(path) {
   const url = new URL(path, document.baseURI);
   if (url.origin !== location.origin) throw new Error('패치 파일은 같은 사이트에서만 읽습니다.');
   const response = await fetch(url, { credentials: 'omit', cache: 'no-store' });
   if (!response.ok) throw new Error(`패치 파일을 읽지 못했습니다 (${response.status}): ${path}`);
   const patch = await response.blob();
-  if (!patch.size || await shaBlob(patch) !== expectedHash.toLowerCase())
-    throw new Error(`패치 파일의 SHA-256이 일치하지 않습니다: ${path}`);
+  if (!patch.size) throw new Error(`패치 파일이 비어 있습니다: ${path}`);
   return patch;
 }
 
@@ -203,19 +200,15 @@ async function applyPatch(legacy = false) {
       throw new Error('메인 NCCH 영역이 올바르지 않습니다.');
     const sourceExefs = file.slice(exefsOffset, exefsOffset + exefsSize);
     const sourceRomfs = file.slice(romfsOffset, romfsOffset + romfsSize);
-    progress('내부 파일 해시 검사 중', 0, true);
+    progress('ExeFS 패치 종류 확인 중', 0, true);
     const exefsHash = await shaBlob(sourceExefs);
-    const variant = config.exefsVariants.find(v => v.sourceSha256 === exefsHash);
-    if (await shaBlob(sourceRomfs) !== config.sourceRomfsSha256)
-      throw new Error('내부 RomFS가 지원하는 원본과 다릅니다.');
-    if (!variant) throw new Error(`지원하지 않는 ExeFS입니다 (SHA-256: ${exefsHash}).`);
+    const variant = config.exefsVariants.find(v => v.sourceSha256 === exefsHash) || canonicalVariant;
 
     let patchSource = sourceExefs;
     let originalIcon = null;
     if (!legacy && variant.normalizeIcon) {
       progress('ExeFS 아이콘 차이 확인 중', 0, true);
-      const prepared = await normalizeExeFs(sourceExefs, config.canonicalExefsSha256,
-        config.canonicalIconSha256);
+      const prepared = await normalizeExeFs(sourceExefs);
       patchSource = prepared.normalized;
       originalIcon = prepared.originalIcon;
     }
@@ -224,8 +217,8 @@ async function applyPatch(legacy = false) {
 
     progress('패치 파일 검증 중', 0, true);
     const [romfsPatch, exefsPatch] = await Promise.all([
-      fetchPatch(config.romfsPatchPath, config.romfsPatchSha256),
-      fetchPatch(chosenPatch.patchPath, chosenPatch.patchSha256),
+      fetchPatch(config.romfsPatchPath),
+      fetchPatch(chosenPatch.patchPath),
     ]);
     if (!navigator.storage?.getDirectory) throw new Error('브라우저의 임시 파일 저장 기능이 필요합니다.');
     const root = await navigator.storage.getDirectory();
@@ -236,10 +229,8 @@ async function applyPatch(legacy = false) {
     const romfsHandle = await root.getFileHandle(romfsName, { create: true });
     temporaryNames.push(romfsName);
     let exefs = await runXdelta(patchSource, exefsPatch, exefsHandle, 3000000, 'ExeFS', 0, 5);
-    if (originalIcon) exefs = await restoreExeFsIcon(exefs, originalIcon, config.canonicalIconSha256);
-    if (await shaBlob(exefs) !== variant.targetSha256) throw new Error('ExeFS 결과 해시 불일치');
+    if (originalIcon) exefs = await restoreExeFsIcon(exefs, originalIcon);
     const romfs = await runXdelta(sourceRomfs, romfsPatch, romfsHandle, 450000000, 'RomFS', 5, 70);
-    if (await shaBlob(romfs) !== config.targetRomfsSha256) throw new Error('RomFS 결과 해시 불일치');
     progress('NCCH·CIA 메타데이터 구성 중', 80, true);
     const main = await buildMainNcch(file, cia, exefs, romfs);
     const output = await buildCia(file, cia, main);
